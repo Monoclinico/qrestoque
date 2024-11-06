@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ler QR Code com Câmera</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 20px;
+        }
+        video {
+            width: 80%;
+            border: 2px solid black;
+        }
+        canvas {
+            display: none;
+        }
+        #output {
+            margin-top: 20px;
+            font-size: 18px;
+            color: green;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Ler QR Code com a Câmera</h1>
+    <video id="video" width="300" height="200" autoplay></video>
+    <canvas id="canvas" width="300" height="200"></canvas>
+    <div id="output">Resultado: Nenhum QR Code detectado</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const output = document.getElementById('output');
+        const context = canvas.getContext('2d');
+
+        // Acessa a câmera do dispositivo
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+            .then(stream => {
+                video.srcObject = stream;
+                video.setAttribute('playsinline', true); // necessário para funcionar no iPhone
+                video.play();
+                scanQRCode(); // Começa a captura do QR Code
+            })
+            .catch(err => {
+                console.error("Erro ao acessar a câmera:", err);
+            });
+
+        function scanQRCode() {
+            // Atualiza o canvas com o que está sendo exibido no vídeo
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Converte a imagem do canvas para uma imagem de dados
+            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            
+            // Tenta ler o QR Code da imagem de dados
+            const qrCode = jsQR(imageData.data, canvas.width, canvas.height);
+
+            if (qrCode) {
+                output.textContent = `Resultado: ${qrCode.data}`;
+            } else {
+                output.textContent = 'Resultado: Nenhum QR Code detectado';
+            }
+
+            // Chama a função novamente para continuar a captura
+            requestAnimationFrame(scanQRCode);
+        }
+    </script>
+
+</body>
+</html>
