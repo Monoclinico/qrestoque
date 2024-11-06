@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ler QR Code e Exibir Link</title>
+    <title>Ler QR Code e Perguntar para Ler Outro</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -35,16 +35,43 @@
             font-weight: bold;
             word-wrap: break-word;
         }
+        #qrPrompt {
+            margin-top: 30px;
+            font-size: 18px;
+            color: #f00;
+            font-weight: bold;
+        }
+        .btn {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+        }
+        .btn-yes {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .btn-no {
+            background-color: #f44336;
+            color: white;
+        }
     </style>
 </head>
 <body>
 
-    <h1>Ler QR Code e Exibir Link</h1>
+    <h1>Ler QR Code e Perguntar para Ler Outro</h1>
     <video id="video" width="300" height="200" autoplay></video>
     <canvas id="canvas" width="300" height="200"></canvas>
     <div id="output">Resultado: Nenhum QR Code detectado</div>
     <div id="qrData">QR Code Detectado: Nenhum</div>
     <div id="qrLink"></div>
+    <div id="qrPrompt" style="display: none;">
+        <p>QR Code detectado! Deseja ler outro?</p>
+        <button class="btn btn-yes" onclick="startScanning()">Sim</button>
+        <button class="btn btn-no" onclick="stopScanning()">Não</button>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
     <script>
@@ -53,24 +80,30 @@
         const output = document.getElementById('output');
         const qrDataElement = document.getElementById('qrData');
         const qrLinkElement = document.getElementById('qrLink');
+        const qrPromptElement = document.getElementById('qrPrompt');
         const context = canvas.getContext('2d');
 
         let qrData = "";  // Variável para armazenar o conteúdo do QR Code
+        let scanning = true; // Variável para controlar o estado da captura
 
-        // Acessa a câmera do dispositivo
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-            .then(stream => {
-                video.srcObject = stream;
-                video.setAttribute('playsinline', true); // necessário para funcionar no iPhone
-                video.play();
-                scanQRCode(); // Começa a captura do QR Code
-            })
-            .catch(err => {
-                console.error("Erro ao acessar a câmera:", err);
-            });
+        // Função para acessar a câmera
+        function startCamera() {
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                .then(stream => {
+                    video.srcObject = stream;
+                    video.setAttribute('playsinline', true); // necessário para funcionar no iPhone
+                    video.play();
+                    scanQRCode(); // Começa a captura do QR Code
+                })
+                .catch(err => {
+                    console.error("Erro ao acessar a câmera:", err);
+                });
+        }
 
         // Função para escanear o QR Code da câmera
         function scanQRCode() {
+            if (!scanning) return;  // Se não estamos escaneando, não processa nada
+
             // Atualiza o canvas com o que está sendo exibido no vídeo
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
             
@@ -86,6 +119,10 @@
                 output.textContent = `Resultado: QR Code detectado!`;
                 qrDataElement.textContent = `Conteúdo do QR Code: ${qrData}`;
                 qrLinkElement.innerHTML = `Link do QR Code: <a href="${qrData}" target="_blank">${qrData}</a>`;
+
+                // Exibe o prompt perguntando se deseja ler outro QR Code
+                qrPromptElement.style.display = 'block';
+                scanning = false; // Interrompe a captura para aguardar a resposta do usuário
             } else {
                 // Caso contrário, exibe mensagem de QR Code não detectado
                 output.textContent = 'Resultado: Nenhum QR Code detectado';
@@ -96,6 +133,30 @@
             // Chama a função novamente para continuar a captura
             requestAnimationFrame(scanQRCode);
         }
+
+        // Função para iniciar a captura de QR Code
+        function startScanning() {
+            qrPromptElement.style.display = 'none'; // Esconde o prompt
+            qrDataElement.textContent = 'QR Code Detectado: Nenhum'; // Limpa o texto
+            qrLinkElement.innerHTML = ''; // Limpa o link
+
+            scanning = true; // Habilita a captura novamente
+            scanQRCode(); // Começa a escanear novamente
+        }
+
+        // Função para parar a captura
+        function stopScanning() {
+            qrPromptElement.style.display = 'none'; // Esconde o prompt
+            video.srcObject.getTracks().forEach(track => track.stop()); // Para o stream da câmera
+            output.textContent = 'Captura finalizada. Obrigado!'; // Mensagem final
+            qrDataElement.textContent = ''; // Limpa o conteúdo do QR Code
+            qrLinkElement.innerHTML = ''; // Limpa o link
+        }
+
+        // Inicia a câmera assim que a página carregar
+        window.onload = function() {
+            startCamera();
+        };
     </script>
 
 </body>
