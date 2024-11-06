@@ -88,7 +88,7 @@
     </div>
 
     <div id="nomeForm" style="display:none;">
-        <input type="text" id="nomeInput" placeholder="Digite o nome para enviar">
+        <p>Nome do QR Code: <span id="nomeExtracted"></span></p>
         <button id="submitBtn" onclick="enviarNome()">Enviar Nome</button>
     </div>
 
@@ -102,7 +102,7 @@
         const urlParamsElement = document.getElementById('urlParams');
         const qrPromptElement = document.getElementById('qrPrompt');
         const nomeFormElement = document.getElementById('nomeForm');
-        const nomeInputElement = document.getElementById('nomeInput');
+        const nomeExtractedElement = document.getElementById('nomeExtracted');
         const submitBtnElement = document.getElementById('submitBtn');
         const context = canvas.getContext('2d');
 
@@ -147,12 +147,17 @@
                 if (isValidURL(qrData)) {
                     const urlParams = extractURLParams(qrData);
                     displayURLParams(urlParams);
+                    
+                    // Extrair o parâmetro 'nome' da URL
+                    if (urlParams.nome) {
+                        nomeExtractedElement.textContent = urlParams.nome;
+                        nomeFormElement.style.display = 'block'; // Exibe o formulário
+                    }
                 }
 
                 // Exibe o prompt perguntando se deseja ler outro QR Code
                 qrPromptElement.style.display = 'block';
                 scanning = false; // Interrompe a captura para aguardar a resposta do usuário
-                nomeFormElement.style.display = 'block'; // Exibe o formulário para o nome
             } else {
                 // Caso contrário, exibe mensagem de QR Code não detectado
                 output.textContent = 'Resultado: Nenhum QR Code detectado';
@@ -243,11 +248,11 @@
 
         // Função chamada ao clicar no botão "Enviar Nome"
         function enviarNome() {
-            const nome = nomeInputElement.value.trim();
+            const nome = nomeExtractedElement.textContent.trim();
             if (nome) {
-                enviarUrlViaPOST(nome);
+                enviarUrlViaPOST(nome); // Envia o nome extraído do QR Code
             } else {
-                alert('Por favor, digite um nome!');
+                alert('Nome não encontrado no QR Code!');
             }
         }
 
