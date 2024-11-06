@@ -22,6 +22,18 @@
             font-size: 18px;
             color: green;
         }
+        #save-btn {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        #save-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -30,13 +42,16 @@
     <video id="video" width="300" height="200" autoplay></video>
     <canvas id="canvas" width="300" height="200"></canvas>
     <div id="output">Resultado: Nenhum QR Code detectado</div>
+    <button id="save-btn" disabled>Salvar Link do QR Code</button>
 
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
     <script>
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         const output = document.getElementById('output');
+        const saveBtn = document.getElementById('save-btn');
         const context = canvas.getContext('2d');
+        let currentQRCodeData = null;  // Variável para armazenar os dados do QR Code
 
         // Acessa a câmera do dispositivo
         navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
@@ -61,14 +76,28 @@
             const qrCode = jsQR(imageData.data, canvas.width, canvas.height);
 
             if (qrCode) {
-                output.textContent = `Resultado: ${qrCode.data}`;
+                currentQRCodeData = qrCode.data;  // Armazena os dados do QR Code
+                output.textContent = `Resultado: ${currentQRCodeData}`;
+                saveBtn.disabled = false;  // Ativa o botão para salvar o link
             } else {
                 output.textContent = 'Resultado: Nenhum QR Code detectado';
+                saveBtn.disabled = true;  // Desativa o botão caso não tenha QR Code
             }
 
             // Chama a função novamente para continuar a captura
             requestAnimationFrame(scanQRCode);
         }
+
+        // Função para salvar o link em um arquivo
+        saveBtn.addEventListener('click', () => {
+            if (currentQRCodeData) {
+                const blob = new Blob([currentQRCodeData], { type: 'text/plain' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'qr_code_link.txt';  // Nome do arquivo para salvar
+                link.click();  // Simula o clique para fazer o download
+            }
+        });
     </script>
 
 </body>
