@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ler QR Code e Perguntar para Ler Outro</title>
+    <title>Ler QR Code e Listar Parâmetros da URL</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -57,16 +57,22 @@
             background-color: #f44336;
             color: white;
         }
+        #urlParams {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #333;
+        }
     </style>
 </head>
 <body>
 
-    <h1>Ler QR Code e Perguntar para Ler Outro</h1>
+    <h1>Ler QR Code e Listar Parâmetros da URL</h1>
     <video id="video" width="300" height="200" autoplay></video>
     <canvas id="canvas" width="300" height="200"></canvas>
     <div id="output">Resultado: Nenhum QR Code detectado</div>
     <div id="qrData">QR Code Detectado: Nenhum</div>
     <div id="qrLink"></div>
+    <div id="urlParams"></div>
     <div id="qrPrompt" style="display: none;">
         <p>QR Code detectado! Deseja ler outro?</p>
         <button class="btn btn-yes" onclick="startScanning()">Sim</button>
@@ -80,6 +86,7 @@
         const output = document.getElementById('output');
         const qrDataElement = document.getElementById('qrData');
         const qrLinkElement = document.getElementById('qrLink');
+        const urlParamsElement = document.getElementById('urlParams');
         const qrPromptElement = document.getElementById('qrPrompt');
         const context = canvas.getContext('2d');
 
@@ -120,6 +127,12 @@
                 qrDataElement.textContent = `Conteúdo do QR Code: ${qrData}`;
                 qrLinkElement.innerHTML = `Link do QR Code: <a href="${qrData}" target="_blank">${qrData}</a>`;
 
+                // Se for uma URL, extrai e exibe os parâmetros
+                if (isValidURL(qrData)) {
+                    const urlParams = extractURLParams(qrData);
+                    displayURLParams(urlParams);
+                }
+
                 // Exibe o prompt perguntando se deseja ler outro QR Code
                 qrPromptElement.style.display = 'block';
                 scanning = false; // Interrompe a captura para aguardar a resposta do usuário
@@ -128,10 +141,40 @@
                 output.textContent = 'Resultado: Nenhum QR Code detectado';
                 qrDataElement.textContent = 'QR Code Detectado: Nenhum';
                 qrLinkElement.innerHTML = ''; // Limpa o link caso não tenha QR Code
+                urlParamsElement.innerHTML = ''; // Limpa os parâmetros da URL
             }
 
             // Chama a função novamente para continuar a captura
             requestAnimationFrame(scanQRCode);
+        }
+
+        // Função para verificar se uma string é uma URL válida
+        function isValidURL(url) {
+            try {
+                new URL(url);
+                return true;
+            } catch (_) {
+                return false;
+            }
+        }
+
+        // Função para extrair os parâmetros de uma URL
+        function extractURLParams(url) {
+            const urlObj = new URL(url);
+            const params = {};
+            urlObj.searchParams.forEach((value, key) => {
+                params[key] = value;
+            });
+            return params;
+        }
+
+        // Função para exibir os parâmetros da URL
+        function displayURLParams(params) {
+            let paramList = "<strong>Parâmetros da URL:</strong><br>";
+            for (const [key, value] of Object.entries(params)) {
+                paramList += `<strong>${key}</strong>: ${value}<br>`;
+            }
+            urlParamsElement.innerHTML = paramList;
         }
 
         // Função para iniciar a captura de QR Code
@@ -139,6 +182,7 @@
             qrPromptElement.style.display = 'none'; // Esconde o prompt
             qrDataElement.textContent = 'QR Code Detectado: Nenhum'; // Limpa o texto
             qrLinkElement.innerHTML = ''; // Limpa o link
+            urlParamsElement.innerHTML = ''; // Limpa os parâmetros da URL
 
             scanning = true; // Habilita a captura novamente
             scanQRCode(); // Começa a escanear novamente
@@ -151,6 +195,7 @@
             output.textContent = 'Captura finalizada. Obrigado!'; // Mensagem final
             qrDataElement.textContent = ''; // Limpa o conteúdo do QR Code
             qrLinkElement.innerHTML = ''; // Limpa o link
+            urlParamsElement.innerHTML = ''; // Limpa os parâmetros
         }
 
         // Inicia a câmera assim que a página carregar
