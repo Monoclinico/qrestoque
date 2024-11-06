@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ler QR Code e Listar Parâmetros da URL</title>
+    <title>Ler QR Code e Enviar Nome via POST</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -35,6 +35,11 @@
             font-weight: bold;
             word-wrap: break-word;
         }
+        #urlParams {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #333;
+        }
         #qrPrompt {
             margin-top: 30px;
             font-size: 18px;
@@ -57,16 +62,19 @@
             background-color: #f44336;
             color: white;
         }
-        #urlParams {
+        #submitBtn {
             margin-top: 20px;
-            font-size: 18px;
-            color: #333;
+            padding: 10px 20px;
+            background-color: #008CBA;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
 
-    <h1>Ler QR Code e Listar Parâmetros da URL</h1>
+    <h1>Ler QR Code e Enviar Nome via POST</h1>
     <video id="video" width="300" height="200" autoplay></video>
     <canvas id="canvas" width="300" height="200"></canvas>
     <div id="output">Resultado: Nenhum QR Code detectado</div>
@@ -79,6 +87,11 @@
         <button class="btn btn-no" onclick="stopScanning()">Não</button>
     </div>
 
+    <div id="nomeForm" style="display:none;">
+        <input type="text" id="nomeInput" placeholder="Digite o nome para enviar">
+        <button id="submitBtn" onclick="enviarNome()">Enviar Nome</button>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
     <script>
         const video = document.getElementById('video');
@@ -88,6 +101,9 @@
         const qrLinkElement = document.getElementById('qrLink');
         const urlParamsElement = document.getElementById('urlParams');
         const qrPromptElement = document.getElementById('qrPrompt');
+        const nomeFormElement = document.getElementById('nomeForm');
+        const nomeInputElement = document.getElementById('nomeInput');
+        const submitBtnElement = document.getElementById('submitBtn');
         const context = canvas.getContext('2d');
 
         let qrData = "";  // Variável para armazenar o conteúdo do QR Code
@@ -136,6 +152,7 @@
                 // Exibe o prompt perguntando se deseja ler outro QR Code
                 qrPromptElement.style.display = 'block';
                 scanning = false; // Interrompe a captura para aguardar a resposta do usuário
+                nomeFormElement.style.display = 'block'; // Exibe o formulário para o nome
             } else {
                 // Caso contrário, exibe mensagem de QR Code não detectado
                 output.textContent = 'Resultado: Nenhum QR Code detectado';
@@ -186,6 +203,7 @@
 
             scanning = true; // Habilita a captura novamente
             scanQRCode(); // Começa a escanear novamente
+            nomeFormElement.style.display = 'none'; // Esconde o formulário
         }
 
         // Função para parar a captura
@@ -196,6 +214,41 @@
             qrDataElement.textContent = ''; // Limpa o conteúdo do QR Code
             qrLinkElement.innerHTML = ''; // Limpa o link
             urlParamsElement.innerHTML = ''; // Limpa os parâmetros
+            nomeFormElement.style.display = 'none'; // Esconde o formulário
+        }
+
+        // Função para enviar o nome via POST
+        async function enviarUrlViaPOST(nome) {
+            let quantidade = 1;
+            let url = `https://docs.google.com/forms/d/e/1FAIpQLSdkmOosQTStaWwL4EULf2Biva5IkN2h1ncuU8So8zznUXHnlA/formResponse?&submit=Submit?usp=pp_url&entry.712542804=${nome}&entry.1358912397=${quantidade}`;
+            
+            try {
+                const resposta = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Origin': '',
+                    },
+                    body: '',
+                });
+
+                const resultado = await resposta.json();
+                console.log(resultado);
+            } catch (erro) {
+                console.error('Erro ao enviar dados:', erro);
+            } finally {
+                console.clear();
+            }
+        }
+
+        // Função chamada ao clicar no botão "Enviar Nome"
+        function enviarNome() {
+            const nome = nomeInputElement.value.trim();
+            if (nome) {
+                enviarUrlViaPOST(nome);
+            } else {
+                alert('Por favor, digite um nome!');
+            }
         }
 
         // Inicia a câmera assim que a página carregar
