@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ler QR Code e Enviar Nome via POST</title>
+    <title>Registrar no Estoque</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -12,7 +12,7 @@
         }
         video {
             width: 80%;
-            border: 2px solid black;
+            border: none;
         }
         canvas {
             display: none;
@@ -62,34 +62,58 @@
             background-color: #f44336;
             color: white;
         }
-        #submitBtn {
-            margin-top: 20px;
-            padding: 10px 20px;
-            background-color: #008CBA;
+        #submitBtnE {
+            max-width: 200px;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #0871b1;
             color: white;
-            font-size: 16px;
+            font-size: 1em;
             cursor: pointer;
         }
+
+        #submitBtnS {
+            max-width: 200px;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #b98801;
+            color: white;
+            font-size: 1em;
+            cursor: pointer;
+        }
+
+        #enviarForm {
+            align-items: center;
+            flex-direction: column;
+
+        }
+
     </style>
 </head>
 <body>
 
-    <h1>Ler QR Code e Enviar Nome via POST</h1>
+    <p>Ler QR Code</p>
+
     <video id="video" width="300" height="200" autoplay></video>
+
     <canvas id="canvas" width="300" height="200"></canvas>
+
     <div id="output">Resultado: Nenhum QR Code detectado</div>
-    <div id="qrData">QR Code Detectado: Nenhum</div>
     <div id="qrLink"></div>
     <div id="urlParams"></div>
-    <div id="qrPrompt" style="display: none;">
-        <p>QR Code detectado! Deseja ler outro?</p>
-        <button class="btn btn-yes" onclick="startScanning()">Sim</button>
-        <button class="btn btn-no" onclick="stopScanning()">Não</button>
+
+    <div id="enviarForm" style="display:none;">
+        <p>Quantidade</p>
+        <input id="submitQuantidade" type="number" step="1">
+       
+        <button id="submitBtnE" onclick="enviarRegistro('entrada')">Registrar Entrada</button>
+        <button id="submitBtnS" onclick="enviarRegistro('saida')">Registrar Saída</button>
     </div>
 
-    <div id="nomeForm" style="display:none;">
-        <p>Nome do QR Code: <span id="nomeExtracted"></span></p>
-        <button id="submitBtn" onclick="enviarNome()">Enviar Nome</button>
+    <div id="qrPrompt" style="display: none;">
+        <p>Deseja ler outro QRCode?</p>
+        <button class="btn btn-yes" onclick="startScanning()">Sim</button>
+        <!--button class="btn btn-no" onclick="stopScanning()">Não</button-->
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
@@ -97,17 +121,17 @@
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         const output = document.getElementById('output');
-        const qrDataElement = document.getElementById('qrData');
         const qrLinkElement = document.getElementById('qrLink');
         const urlParamsElement = document.getElementById('urlParams');
         const qrPromptElement = document.getElementById('qrPrompt');
-        const nomeFormElement = document.getElementById('nomeForm');
-        const nomeExtractedElement = document.getElementById('nomeExtracted');
-        const submitBtnElement = document.getElementById('submitBtn');
+        const registroFormElement = document.getElementById('enviarForm');
+        const quantidadeElement = document.getElementById('submitQuantidade');
         const context = canvas.getContext('2d');
 
         let qrData = "";  // Variável para armazenar o conteúdo do QR Code
         let scanning = true; // Variável para controlar o estado da captura
+
+        let parametrosQR = {};
 
         // Função para acessar a câmera
         function startCamera() {
@@ -140,19 +164,16 @@
                 // Se QR Code for detectado, armazene o conteúdo
                 qrData = qrCode.data;
                 output.textContent = `Resultado: QR Code detectado!`;
-                qrDataElement.textContent = `Conteúdo do QR Code: ${qrData}`;
-                qrLinkElement.innerHTML = `Link do QR Code: <a href="${qrData}" target="_blank">${qrData}</a>`;
+                //qrLinkElement.innerHTML = `Link do QR Code: <a href="${qrData}" target="_blank">${qrData}</a>`;
 
                 // Se for uma URL, extrai e exibe os parâmetros
                 if (isValidURL(qrData)) {
                     const urlParams = extractURLParams(qrData);
                     displayURLParams(urlParams);
                     
-                    // Extrair o parâmetro 'nome' da URL
-                    if (urlParams.nome) {
-                        nomeExtractedElement.textContent = urlParams.nome;
-                        nomeFormElement.style.display = 'block'; // Exibe o formulário
-                    }
+                    parametrosQR = urlParams;
+                    registroFormElement.style.display = 'flex'; // Exibe o formulário
+                    
                 }
 
                 // Exibe o prompt perguntando se deseja ler outro QR Code
@@ -161,7 +182,6 @@
             } else {
                 // Caso contrário, exibe mensagem de QR Code não detectado
                 output.textContent = 'Resultado: Nenhum QR Code detectado';
-                qrDataElement.textContent = 'QR Code Detectado: Nenhum';
                 qrLinkElement.innerHTML = ''; // Limpa o link caso não tenha QR Code
                 urlParamsElement.innerHTML = ''; // Limpa os parâmetros da URL
             }
@@ -192,7 +212,7 @@
 
         // Função para exibir os parâmetros da URL
         function displayURLParams(params) {
-            let paramList = "<strong>Parâmetros da URL:</strong><br>";
+            let paramList = "Detalhes:<br>";
             for (const [key, value] of Object.entries(params)) {
                 paramList += `<strong>${key}</strong>: ${value}<br>`;
             }
@@ -202,13 +222,12 @@
         // Função para iniciar a captura de QR Code
         function startScanning() {
             qrPromptElement.style.display = 'none'; // Esconde o prompt
-            qrDataElement.textContent = 'QR Code Detectado: Nenhum'; // Limpa o texto
             qrLinkElement.innerHTML = ''; // Limpa o link
             urlParamsElement.innerHTML = ''; // Limpa os parâmetros da URL
 
             scanning = true; // Habilita a captura novamente
             scanQRCode(); // Começa a escanear novamente
-            nomeFormElement.style.display = 'none'; // Esconde o formulário
+            registroFormElement.style.display = 'none'; // Esconde o formulário
         }
 
         // Função para parar a captura
@@ -216,17 +235,25 @@
             qrPromptElement.style.display = 'none'; // Esconde o prompt
             video.srcObject.getTracks().forEach(track => track.stop()); // Para o stream da câmera
             output.textContent = 'Captura finalizada. Obrigado!'; // Mensagem final
-            qrDataElement.textContent = ''; // Limpa o conteúdo do QR Code
             qrLinkElement.innerHTML = ''; // Limpa o link
             urlParamsElement.innerHTML = ''; // Limpa os parâmetros
-            nomeFormElement.style.display = 'none'; // Esconde o formulário
+            registroFormElement.style.display = 'none'; // Esconde o formulário
         }
 
         // Função para enviar o nome via POST
-        async function enviarUrlViaPOST(nome) {
-            let quantidade = 1;
-            let url = `https://docs.google.com/forms/d/e/1FAIpQLSdkmOosQTStaWwL4EULf2Biva5IkN2h1ncuU8So8zznUXHnlA/formResponse?&submit=Submit?usp=pp_url&entry.712542804=${nome}&entry.1358912397=${quantidade}`;
+        async function enviarUrlViaPOST(fx) {
+            let produto = parametrosQR.produto.toString();
+            let cor = parametrosQR.cor.toString();
+            let vies = parametrosQR.vies.toString();
+            let tamanho =parametrosQR.tamanho.toString();
+            let fluxo = fx.toString();
+            let quantidade = parseInt(removeLeadingZeros(quantidadeElement.value.toString().trim()), 10).toString() ;
+
+            console.log(`${produto} ${cor} ${vies} ${tamanho} ${fluxo} ${quantidade}`)
+
+            let url = `https://docs.google.com/forms/d/e/1FAIpQLSdkmOosQTStaWwL4EULf2Biva5IkN2h1ncuU8So8zznUXHnlA/formResponse?&submit=Submit?usp=pp_url&entry.712542804=${produto}&entry.897359765=${cor}&entry.1424423387=${vies}&entry.1734976046=${tamanho}&entry.31503324=${fluxo}&entry.1358912397=${quantidade}`;
             
+
             try {
                 const resposta = await fetch(url, {
                     method: 'POST',
@@ -238,22 +265,71 @@
                 });
 
                 const resultado = await resposta.json();
-                console.log(resultado);
+                
+                //console.log(resultado);
             } catch (erro) {
                 console.error('Erro ao enviar dados:', erro);
             } finally {
-                //console.clear();
+                console.clear();
             }
         }
 
         // Função chamada ao clicar no botão "Enviar Nome"
-        function enviarNome() {
-            const nome = nomeExtractedElement.textContent.trim();
-            if (nome) {
-                enviarUrlViaPOST(nome); // Envia o nome extraído do QR Code
-            } else {
-                alert('Nome não encontrado no QR Code!');
+        function enviarRegistro(fx) {
+            
+            if ( isIntegerString( removeLeadingZeros(quantidadeElement.value.toString().trim()) ) ) {
+                enviarUrlViaPOST(fx);
+                showCenteredMessage();
+                let x = setTimeout( startScanning,2000);
+            }else{
+                alert("Quantidade inválida")
             }
+           
+
+        }
+
+        function isIntegerString(str) {
+            const num = parseInt(str, 10);
+            return Number.isInteger(num) && num.toString() === str;
+        }
+
+        function removeLeadingZeros(str) {
+            // Verifica se a string é composta apenas de zeros
+            if (/^0+$/.test(str)) {
+                return "0";
+            }
+            // Remove os zeros à esquerda caso haja outros dígitos
+            return str.replace(/^0+/, '');
+        }
+
+
+        function showCenteredMessage() {
+            // Cria o elemento de mensagem
+            const messageDiv = document.createElement("div");
+            messageDiv.innerText = "Registrado";
+            
+            // Estilo para centralizar e colocar o elemento por cima de tudo
+            Object.assign(messageDiv.style, {
+                position: "fixed",
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                backgroundColor: "rgba(0, 0, 0, 0.8)",
+                color: "white",
+                padding: "20px",
+                borderRadius: "8px",
+                fontSize: "1.5em",
+                textAlign: "center",
+                zIndex: "9999" // garante que o elemento fique por cima de outros elementos
+            });
+            
+            // Adiciona o elemento ao corpo do documento
+            document.body.appendChild(messageDiv);
+            
+            // Remove o elemento após 2000 ms
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 2000);
         }
 
         // Inicia a câmera assim que a página carregar
