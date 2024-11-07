@@ -242,10 +242,10 @@
 
         // Função para enviar o nome via POST
         async function enviarUrlViaPOST(fx) {
-            let produto = parametrosQR.produto.toString();
-            let cor = parametrosQR.cor.toString();
-            let vies = parametrosQR.vies.toString();
-            let tamanho =parametrosQR.tamanho.toString();
+            let produto = parametrosQR.p.toString();
+            let cor = parametrosQR.c.toString();
+            let vies = parametrosQR.v.toString();
+            let tamanho =parametrosQR.t.toString();
             let fluxo = fx.toString();
             let quantidade = parseInt(removeLeadingZeros(quantidadeElement.value.toString().trim()), 10).toString() ;
 
