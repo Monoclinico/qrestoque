@@ -18,7 +18,7 @@
             display: none;
         }
         #output {
-            margin-top: 20px;
+            margin-top: 2px;
             font-size: 18px;
             color: green;
         }
@@ -43,7 +43,7 @@
         #qrPrompt {
             margin-top: 30px;
             font-size: 18px;
-            color: #f00;
+            color: #af6b00;
             font-weight: bold;
         }
         .btn {
@@ -88,6 +88,27 @@
 
         }
 
+        #avisoQRinvalido{
+            font-size: 1.1em;
+            color: red;
+        }
+
+
+        #submitQuantidade {
+            width: 100px;
+            font-size: 1.2em;
+            color: black;
+            margin: 2px 0px 20px 0px;
+            border: 2px solid #d75959;
+            background-color: beige;
+        }
+
+        #label_quantidade {
+            font-size: 1.2em;
+            color: black;
+            margin: 20px 0px 2px 0px;
+        }
+
     </style>
 </head>
 <body>
@@ -99,17 +120,17 @@
     <canvas id="canvas" width="300" height="200"></canvas>
 
     <div id="output">Resultado: Nenhum QR Code detectado</div>
-    <div id="qrLink"></div>
+    <!--div id="qrLink"></div-->
     <div id="urlParams"></div>
 
     <div id="enviarForm" style="display:none;">
-        <p>Quantidade</p>
+        <p id="label_quantidade">Quantidade</p>
         <input id="submitQuantidade" type="number" step="1">
        
         <button id="submitBtnE" onclick="enviarRegistro('entrada')">Registrar Entrada</button>
         <button id="submitBtnS" onclick="enviarRegistro('saida')">Registrar Saída</button>
     </div>
-
+    <p id="avisoQRinvalido" style="display:none;">QR inválido para produto</p>
     <div id="qrPrompt" style="display: none;">
         <p>Deseja ler outro QRCode?</p>
         <button class="btn btn-yes" onclick="startScanning()">Sim</button>
@@ -121,17 +142,103 @@
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         const output = document.getElementById('output');
-        const qrLinkElement = document.getElementById('qrLink');
+        //const qrLinkElement = document.getElementById('qrLink');
         const urlParamsElement = document.getElementById('urlParams');
         const qrPromptElement = document.getElementById('qrPrompt');
         const registroFormElement = document.getElementById('enviarForm');
         const quantidadeElement = document.getElementById('submitQuantidade');
+        const avisoQRinvalidoElement = document.getElementById('avisoQRinvalido');
+
+        
         const context = canvas.getContext('2d');
 
         let qrData = "";  // Variável para armazenar o conteúdo do QR Code
         let scanning = true; // Variável para controlar o estado da captura
 
         let parametrosQR = {};
+
+        let obj_produto = {
+            "a": "top faixa",
+            "b": "tomara que caia",
+            "c": "regata masculina adulto",
+            "d": "ombro unico",
+            "e": "faixa",
+            "f": "regata infantil",
+            "g": "regata decote",
+            "h": "regata basica feminina",
+            "i": "cropped decote",
+            "j": "cropped",
+            "k": "camiseta masculina adulto",
+            "l": "camiseta infantil",
+            "m": "camiseta infantil adulto",
+            "n": "blusa manga longa feminina gola alta",
+        }
+
+        let obj_cor = {
+            "a": "preto",
+            "b": "branco",
+            "c": "marrom claro",
+            "d": "marrom escuro/chocolate",
+            "e": "rosa pink",
+            "f": "listrado preto e branco",
+            "g": "listrado vermelho e branco",
+            "h": "verde escuro/militar/musgo",
+            "i": "azul escuro/marinho",
+            "j": "cinza",
+            "k": "vermelho",
+            "l": "vinho",
+            "m": "azul claro/bebe",
+            "n": "laranja",
+            "o": "azul bic",
+            "p": "rosa claro/bebe",
+            "q": "marrom areia",
+            "r": "listrado verde escuro e branco",
+            "s": "listrado azul claro e branco",
+            "t": "listrado verde claro e branco",
+            "u": "verde lima/limao",
+        }
+
+        let obj_vies = {
+            "a": "preto",
+            "b": "branco",
+            "c": "marrom claro",
+            "d": "marrom escuro/chocolate",
+            "e": "rosa pink",
+            "f": "listrado preto e branco",
+            "g": "listrado vermelho e branco",
+            "h": "verde escuro/militar/musgo",
+            "i": "azul escuro/marinho",
+            "j": "cinza",
+            "k": "vermelho",
+            "l": "vinho",
+            "m": "azul claro/bebe",
+            "n": "laranja",
+            "o": "azul bic",
+            "p": "rosa claro/bebe",
+            "q": "marrom areia",
+            "r": "listrado verde escuro e branco",
+            "s": "listrado azul claro e branco",
+            "t": "listrado verde claro e branco",
+            "u": "verde lima/limao",
+            "v": "sem",
+            "w": "mesma cor",
+        }
+
+        let obj_tamanho = {
+            "a": "pp",
+            "b": "p",
+            "c": "m",
+            "d": "g",
+            "e": "gg",
+            "f": "4",
+            "g": "6",
+            "h": "8",
+            "i": "10",
+            "j": "12",
+            "k": "14",
+            "l": "16",
+            "m": "faixa",
+        }
 
         // Função para acessar a câmera
         function startCamera() {
@@ -167,14 +274,24 @@
                 //qrLinkElement.innerHTML = `Link do QR Code: <a href="${qrData}" target="_blank">${qrData}</a>`;
 
                 // Se for uma URL, extrai e exibe os parâmetros
-                if (isValidURL(qrData)) {
-                    const urlParams = extractURLParams(qrData);
-                    displayURLParams(urlParams);
-                    
-                    parametrosQR = urlParams;
-                    registroFormElement.style.display = 'flex'; // Exibe o formulário
-                    
+                
+                if (qrData.length == 4){
+                    const urlParams = extractParams(qrData);
+            
+
+                    if (validarParams(urlParams)){
+                        displayURLParams(urlParams);
+                        parametrosQR = urlParams;
+                        registroFormElement.style.display = 'flex'; // Exibe o formulário
+                    }else {
+                        avisoQRinvalidoElement.style = "display: block;";
+                    }
+
+                }else{
+                    avisoQRinvalidoElement.style = "display: block;";
                 }
+                    
+                
 
                 // Exibe o prompt perguntando se deseja ler outro QR Code
                 qrPromptElement.style.display = 'block';
@@ -182,7 +299,7 @@
             } else {
                 // Caso contrário, exibe mensagem de QR Code não detectado
                 output.textContent = 'Resultado: Nenhum QR Code detectado';
-                qrLinkElement.innerHTML = ''; // Limpa o link caso não tenha QR Code
+                //qrLinkElement.innerHTML = ''; // Limpa o link caso não tenha QR Code
                 urlParamsElement.innerHTML = ''; // Limpa os parâmetros da URL
             }
 
@@ -190,24 +307,49 @@
             requestAnimationFrame(scanQRCode);
         }
 
-        // Função para verificar se uma string é uma URL válida
-        function isValidURL(url) {
-            try {
-                new URL(url);
-                return true;
-            } catch (_) {
-                return false;
-            }
-        }
+
 
         // Função para extrair os parâmetros de uma URL
-        function extractURLParams(url) {
-            const urlObj = new URL(url);
-            const params = {};
-            urlObj.searchParams.forEach((value, key) => {
-                params[key] = value;
-            });
+        function extractParams(url) {
+            let codigo = url.toString().trim();
+
+            let p = "";
+            let c = "";
+            let v = "";
+            let t = "";
+
+            if (codigo[0] in obj_produto){
+                p = obj_produto[codigo[0]];
+            }
+            if (codigo[0] in obj_produto){
+                c = obj_cor[codigo[1]];
+            }
+            if (codigo[0] in obj_produto){
+                v = obj_vies[codigo[2]];
+            }
+            if (codigo[0] in obj_produto){
+                t = obj_tamanho[codigo[3]];
+            }
+
+            const params = { 
+                "produto": p,
+                "cor": c,
+                "vies": v,
+                "tamanho": t,
+            };
+
             return params;
+        }
+
+        function validarParams(params) {
+            let valido = true;
+            for (let k in params){
+                if(params[k].trim() == ""){
+                    valido = false;
+                    break;
+                }
+            }
+            return valido;
         }
 
         // Função para exibir os parâmetros da URL
@@ -219,11 +361,16 @@
             urlParamsElement.innerHTML = paramList;
         }
 
+        function substituirEspaco(texto) {
+            return texto.toString().replaceAll(" ", "%20").replaceAll("/", "%2F");
+        }
+
         // Função para iniciar a captura de QR Code
         function startScanning() {
             qrPromptElement.style.display = 'none'; // Esconde o prompt
-            qrLinkElement.innerHTML = ''; // Limpa o link
+            //qrLinkElement.innerHTML = ''; // Limpa o link
             urlParamsElement.innerHTML = ''; // Limpa os parâmetros da URL
+            avisoQRinvalidoElement.style = "display: none;";
 
             scanning = true; // Habilita a captura novamente
             scanQRCode(); // Começa a escanear novamente
@@ -235,17 +382,17 @@
             qrPromptElement.style.display = 'none'; // Esconde o prompt
             video.srcObject.getTracks().forEach(track => track.stop()); // Para o stream da câmera
             output.textContent = 'Captura finalizada. Obrigado!'; // Mensagem final
-            qrLinkElement.innerHTML = ''; // Limpa o link
+            //qrLinkElement.innerHTML = ''; // Limpa o link
             urlParamsElement.innerHTML = ''; // Limpa os parâmetros
             registroFormElement.style.display = 'none'; // Esconde o formulário
         }
 
         // Função para enviar o nome via POST
         async function enviarUrlViaPOST(fx) {
-            let produto = parametrosQR.p.toString();
-            let cor = parametrosQR.c.toString();
-            let vies = parametrosQR.v.toString();
-            let tamanho =parametrosQR.t.toString();
+            let produto = substituirEspaco(parametrosQR.produto.toString());
+            let cor = substituirEspaco(parametrosQR.cor.toString());
+            let vies = substituirEspaco(parametrosQR.vies.toString());
+            let tamanho = substituirEspaco(parametrosQR.tamanho.toString());
             let fluxo = fx.toString();
             let quantidade = parseInt(removeLeadingZeros(quantidadeElement.value.toString().trim()), 10).toString() ;
 
@@ -270,7 +417,7 @@
             } catch (erro) {
                 console.error('Erro ao enviar dados:', erro);
             } finally {
-                console.clear();
+                //console.clear();
             }
         }
 
