@@ -180,6 +180,8 @@
 
     <a class="botao_menu" href="https://monoclinico.github.io/note/">Voltar ao menu</a>
 
+<button onclick="inicializarAudio()">Ativar som</button>
+
     <div class="checkbox-container">
         <input type="checkbox" id="quantidadeCheckbox" checked>
         <label for="quantidadeCheckbox">Mudar quantidade</label>
@@ -241,7 +243,10 @@
         const btnResgitrarElement = document.getElementById("submitBtnE");
         const btnCancelarElement = document.getElementById("lerOutroBtn");
     
-       
+        let contextoAudio;
+        let desbloqueado = false;
+
+
 
         
         const context = canvas.getContext('2d'); // elemento para criar o canvas do qrcode
@@ -257,6 +262,14 @@
         let tamanho_obj = {};
 
    
+        function inicializarAudio() {
+            contextoAudio = new (window.AudioContext || window.webkitAudioContext)();
+            contextoAudio.resume(); // necessário em alguns navegadores
+            desbloqueado = true;
+        
+        }
+
+
         async function obterDados(link){
 
             let data = await fetch(link);
@@ -628,13 +641,13 @@
 
         // função para gerar som de bipe
         function tocarBipe(duracao = 100, frequencia = 440, volume = 0.5) {
-            const contextoAudio = new (window.AudioContext || window.webkitAudioContext)();
+            if (!desbloqueado || !contextoAudio) return;
+
             const oscilador = contextoAudio.createOscillator();
             const ganho = contextoAudio.createGain();
 
-            oscilador.type = 'sine'; // tipos: sine, square, triangle, sawtooth
-            oscilador.frequency.value = frequencia; // frequência em Hz
-
+            oscilador.type = 'sine';
+            oscilador.frequency.value = frequencia;
             ganho.gain.value = volume;
 
             oscilador.connect(ganho);
@@ -644,7 +657,6 @@
 
             setTimeout(() => {
                 oscilador.stop();
-                contextoAudio.close(); // importante pra liberar recursos
             }, duracao);
         }
 
