@@ -174,13 +174,31 @@
         }
 
 
+        #botao_ativar_som {
+            display: block;
+            width: fit-content;
+            height: auto;
+            margin: 2px auto 20px;
+            background-color: #5ae7ff;
+            padding: 2px 10px;
+            border-radius: 10px;
+            text-decoration: none;
+            color: black;
+            font-weight: 600;
+            font-size: 0.8em;
+            cursor: pointer;
+            box-shadow: 2px 2px 2px #898989;
+            outline: none;
+            border: none;
+        }
+
     </style>
 </head>
 <body>
 
     <a class="botao_menu" href="https://monoclinico.github.io/note/">Voltar ao menu</a>
 
-<button onclick="inicializarAudio()">Ativar som</button>
+    <button id="botao_ativar_som" onclick="inicializarAudio()">Ativar som</button>
 
     <div class="checkbox-container">
         <input type="checkbox" id="quantidadeCheckbox" checked>
@@ -242,6 +260,8 @@
         const quantidadeCheckboxElement = document.getElementById('quantidadeCheckbox');
         const btnResgitrarElement = document.getElementById("submitBtnE");
         const btnCancelarElement = document.getElementById("lerOutroBtn");
+        const btnSomElement = document.getElementById("botao_ativar_som");
+
     
         let contextoAudio;
         let desbloqueado = false;
@@ -266,7 +286,7 @@
             contextoAudio = new (window.AudioContext || window.webkitAudioContext)();
             contextoAudio.resume(); // necessário em alguns navegadores
             desbloqueado = true;
-        
+            btnSomElement.style.display = 'none';
         }
 
 
